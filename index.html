@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NovaTech Dental — Chat Widget Demo</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; margin: 0; padding: 40px; background: #f5f7fa; color: #1a1a1a; }
+  h1 { color: #0a4d6e; }
+  .demo-note { max-width: 600px; padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+
+  /* =========================================================
+     NOVATECH DENTAL AI CHAT WIDGET
+     Drop the <div id="ntd-chat-widget"></div> and the <script>
+     block below into any HTML page to embed.
+     ========================================================= */
+
+  #ntd-chat-bubble {
+    position: fixed; bottom: 24px; right: 24px; width: 60px; height: 60px;
+    border-radius: 50%; background: linear-gradient(135deg, #0a9fb8, #0a4d6e);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; box-shadow: 0 6px 24px rgba(10, 77, 110, 0.35);
+    z-index: 9998; transition: transform 0.2s;
+  }
+  #ntd-chat-bubble:hover { transform: scale(1.08); }
+  #ntd-chat-bubble svg { width: 28px; height: 28px; fill: white; }
+
+  #ntd-chat-window {
+    position: fixed; bottom: 100px; right: 24px; width: 360px; height: 520px;
+    background: white; border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+    display: none; flex-direction: column; overflow: hidden; z-index: 9999;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  #ntd-chat-window.open { display: flex; }
+
+  .ntd-header {
+    background: linear-gradient(135deg, #0a9fb8, #0a4d6e); color: white;
+    padding: 16px 20px; display: flex; align-items: center; gap: 12px;
+  }
+  .ntd-avatar {
+    width: 40px; height: 40px; border-radius: 50%; background: white;
+    display: flex; align-items: center; justify-content: center; font-weight: 600;
+    color: #0a4d6e; font-size: 16px;
+  }
+  .ntd-header-text h4 { margin: 0; font-size: 15px; font-weight: 600; }
+  .ntd-header-text p { margin: 2px 0 0; font-size: 12px; opacity: 0.85; }
+  .ntd-status-dot {
+    display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+    background: #4ade80; margin-right: 6px;
+  }
+  .ntd-close {
+    margin-left: auto; background: none; border: none; color: white;
+    font-size: 22px; cursor: pointer; opacity: 0.8; line-height: 1;
+  }
+  .ntd-close:hover { opacity: 1; }
+
+  .ntd-messages {
+    flex: 1; padding: 16px; overflow-y: auto; background: #f8fafc;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .ntd-msg { max-width: 80%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.4; }
+  .ntd-msg-bot { background: white; color: #1a1a1a; align-self: flex-start; border: 1px solid #e2e8f0; border-bottom-left-radius: 4px; }
+  .ntd-msg-user { background: #0a9fb8; color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+  .ntd-typing { display: flex; gap: 4px; padding: 12px 14px; background: white; border: 1px solid #e2e8f0; border-radius: 16px; border-bottom-left-radius: 4px; align-self: flex-start; }
+  .ntd-typing span { width: 7px; height: 7px; background: #94a3b8; border-radius: 50%; animation: ntd-bounce 1.2s infinite; }
+  .ntd-typing span:nth-child(2) { animation-delay: 0.15s; }
+  .ntd-typing span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes ntd-bounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.5; } 30% { transform: translateY(-6px); opacity: 1; } }
+
+  .ntd-input-row {
+    padding: 12px; background: white; border-top: 1px solid #e2e8f0;
+    display: flex; gap: 8px;
+  }
+  .ntd-input {
+    flex: 1; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 24px;
+    font-size: 14px; outline: none; font-family: inherit;
+  }
+  .ntd-input:focus { border-color: #0a9fb8; }
+  .ntd-send {
+    width: 40px; height: 40px; border-radius: 50%; background: #0a9fb8;
+    border: none; color: white; cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .ntd-send:hover { background: #0a4d6e; }
+  .ntd-send svg { width: 18px; height: 18px; fill: white; }
+  .ntd-footer { text-align: center; padding: 6px; font-size: 11px; color: #94a3b8; background: white; }
+</style>
+</head>
+<body>
+
+<h1>🦷 NovaTech Dental — Demo Page</h1>
+<div class="demo-note">
+  <p>This is a preview page showing the embedded chat widget. The actual widget is the floating bubble in the bottom-right corner. Click it to open the chat.</p>
+  <p><b>To embed on a real client site:</b> copy everything between the <code>NOVATECH WIDGET START</code> and <code>NOVATECH WIDGET END</code> markers below and paste before <code>&lt;/body&gt;</code>.</p>
+  <p><b>Before using:</b> set <code>N8N_WEBHOOK_URL</code> below to your deployed n8n webchat webhook URL.</p>
+</div>
+
+<!-- =================== NOVATECH WIDGET START =================== -->
+<div id="ntd-chat-bubble" onclick="ntdToggle()">
+  <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.54.36 3 1 4.29L2 22l5.71-1C9 21.64 10.46 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2zm4 11h-3v3h-2v-3H8v-2h3V8h2v3h3v2z"/></svg>
+</div>
+
+<div id="ntd-chat-window">
+  <div class="ntd-header">
+    <div class="ntd-avatar">S</div>
+    <div class="ntd-header-text">
+      <h4>Sarah from NovaTech Dental</h4>
+      <p><span class="ntd-status-dot"></span>Online now</p>
+    </div>
+    <button class="ntd-close" onclick="ntdToggle()">×</button>
+  </div>
+  <div class="ntd-messages" id="ntd-messages"></div>
+  <div class="ntd-input-row">
+    <input type="text" class="ntd-input" id="ntd-input" placeholder="Type your message..." onkeydown="if(event.key==='Enter') ntdSend()">
+    <button class="ntd-send" onclick="ntdSend()">
+      <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+    </button>
+  </div>
+  <div class="ntd-footer">Powered by NovaTech AI</div>
+</div>
+
+<script>
+  // ===== CONFIG =====
+  const N8N_WEBHOOK_URL = "https://noorulhassanbhatti.app.n8n.cloud/webhook/web-test";
+  // ==================
+
+  const ntdSession = "web_" + Math.random().toString(36).slice(2) + Date.now();
+  const ntdUserId = "web_user_" + Math.random().toString(36).slice(2);
+  let ntdOpened = false;
+
+  function ntdToggle() {
+    const w = document.getElementById("ntd-chat-window");
+    w.classList.toggle("open");
+    if (!ntdOpened && w.classList.contains("open")) {
+      ntdOpened = true;
+      ntdAddBot("Hi! I'm Sarah from NovaTech Dental 🦷 How can I help you today? You can book an appointment, ask about services, or get clinic info.");
+    }
+  }
+
+  function ntdAddBot(text) {
+    const m = document.createElement("div");
+    m.className = "ntd-msg ntd-msg-bot";
+    m.textContent = text;
+    document.getElementById("ntd-messages").appendChild(m);
+    ntdScroll();
+  }
+  function ntdAddUser(text) {
+    const m = document.createElement("div");
+    m.className = "ntd-msg ntd-msg-user";
+    m.textContent = text;
+    document.getElementById("ntd-messages").appendChild(m);
+    ntdScroll();
+  }
+  function ntdShowTyping() {
+    const t = document.createElement("div");
+    t.className = "ntd-typing";
+    t.id = "ntd-typing";
+    t.innerHTML = "<span></span><span></span><span></span>";
+    document.getElementById("ntd-messages").appendChild(t);
+    ntdScroll();
+  }
+  function ntdHideTyping() {
+    const t = document.getElementById("ntd-typing");
+    if (t) t.remove();
+  }
+  function ntdScroll() {
+    const box = document.getElementById("ntd-messages");
+    box.scrollTop = box.scrollHeight;
+  }
+
+  async function ntdSend() {
+    const input = document.getElementById("ntd-input");
+    const text = input.value.trim();
+    if (!text) return;
+    ntdAddUser(text);
+    input.value = "";
+    ntdShowTyping();
+
+    try {
+      const res = await fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          user_id: ntdUserId,
+          session_id: ntdSession,
+          message: text
+        })
+      });
+      const data = await res.json();
+      ntdHideTyping();
+      ntdAddBot(data.reply || "Sorry, I had trouble connecting. Please try again.");
+    } catch (err) {
+      ntdHideTyping();
+      ntdAddBot("Connection issue — please try again in a moment.");
+      console.error(err);
+    }
+  }
+</script>
+<!-- =================== NOVATECH WIDGET END =================== -->
+
+</body>
+</html>
